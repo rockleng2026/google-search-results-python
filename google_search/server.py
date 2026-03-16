@@ -29,6 +29,7 @@ app.config["JSON_AS_ASCII"] = False
 
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 GOOGLE_CSE_ID = os.environ.get("GOOGLE_CSE_ID", "")
+API_TOKEN = os.environ.get("API_TOKEN", "")
 
 
 def json_response(data, status=200):
@@ -37,6 +38,43 @@ def json_response(data, status=200):
         status=status,
         mimetype="application/json; charset=utf-8",
     )
+
+
+def check_api_token():
+    """Check if API token is valid. Returns True if token is valid or not configured."""
+    if not API_TOKEN:
+        return True, None
+
+    token = request.headers.get("Authorization", "").replace("Bearer ", "").strip()
+    if not token:
+        token = request.headers.get("X-API-Token", "").strip()
+
+    if not token:
+        return (
+            False,
+            "Missing API token. Provide via 'Authorization: Bearer <token>' or 'X-API-Token: <token>' header",
+        )
+
+    if token != API_TOKEN:
+        return False, "Invalid API token"
+
+    return True, None
+
+
+@app.before_request
+def authenticate():
+    """Authenticate requests to protected endpoints."""
+    if request.path == "/health":
+        return None
+
+    valid, error = check_api_token()
+    if not valid:
+        logger.warning(
+            f"[API] Authentication failed for {request.path} from {request.remote_addr}"
+        )
+        return json_response({"error": error}, 401)
+
+    return None
 
 
 @app.route("/health", methods=["GET"])
@@ -146,6 +184,11 @@ def search_alias():
 
 
 def run_server(host="0.0.0.0", port=25001, debug=False):
+    auth_info = (
+        "Enabled (API_TOKEN configured)"
+        if API_TOKEN
+        else "Disabled (set API_TOKEN env var to enable)"
+    )
     print(f"""
 ╔═══════════════════════════════════════════════════════════════╗
 ║         Web Search API Service                             ║
@@ -153,19 +196,27 @@ def run_server(host="0.0.0.0", port=25001, debug=False):
 ╚═══════════════════════════════════════════════════════════════╝
 
 Endpoints:
-    GET  /health           - Health check
+    GET  /health           - Health check (no auth)
     GET  /web_search       - Search (alias: /search)
     POST /web_search      - Search with JSON body
     POST /web_fetch       - Fetch URL content
 
+Authentication: {auth_info}
+  Headers:
+    Authorization: Bearer <token>
+    or
+    X-API-Token: <token>
+
 Examples:
-    curl "http://localhost:{port}/web_search?q=python&num=5"
-    curl -X POST -H "Content-Type: application/json" -d '{{"q":"python","engines":"duckduckgo,bing"}}' http://localhost:{port}/web_search
-    curl -X POST -H "Content-Type: application/json" -d '{{"url":"https://www.python.org"}}' http://localhost:{port}/web_fetch
+    curl "http://localhost:{port}/health"
+    curl -H "Authorization: Bearer your-token" "http://localhost:{port}/web_search?q=python&num=5"
+    curl -H "X-API-Token: your-token" -X POST -H "Content-Type: application/json" -d '{{"q":"python","engines":"duckduckgo,bing"}}' http://localhost:{port}/web_search
+    curl -H "Authorization: Bearer your-token" -X POST -H "Content-Type: application/json" -d '{{"url":"https://www.python.org"}}' http://localhost:{port}/web_fetch
 
 Environment Variables:
     GOOGLE_API_KEY - Google Custom Search API Key
     GOOGLE_CSE_ID  - Google Custom Search Engine ID
+    API_TOKEN      - API Authentication Token (optional)
 """)
     app.run(host=host, port=port, debug=debug)
 
