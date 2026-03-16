@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  web-search-api:
+    build:
+      context: .
+      dockerfile: google_search/Dockerfile
+    container_name: web-search-api
+    ports:
+      - "5000:5000"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - GOOGLE_CSE_ID=${GOOGLE_CSE_ID:-}
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - ./logs:/app/logs
+
+networks:
+  default:
+    name: web-search-network
