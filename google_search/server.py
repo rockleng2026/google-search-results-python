@@ -113,7 +113,15 @@ def web_fetch():
     timeout = int(params.get("timeout") or 15)
     extract_mode = params.get("extract_mode") or "markdown"
     max_chars = int(params.get("max_chars") or 50000)
-    use_cache = params.get("use_cache", "true").lower() != "false"
+
+    # Handle use_cache: JSON boolean or string "true"/"false"
+    use_cache_raw = params.get("use_cache", True)
+    if isinstance(use_cache_raw, bool):
+        use_cache = use_cache_raw
+    elif isinstance(use_cache_raw, str):
+        use_cache = use_cache_raw.lower() != "false"
+    else:
+        use_cache = True
 
     if not url:
         return json_response({"error": "Missing required parameter: url"}, 400)
