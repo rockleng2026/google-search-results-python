@@ -320,18 +320,10 @@ def fetch_url(
         final_url = str(response.url)
 
         if "text/html" in content_type:
-            extracted = extract_readability_content(
-                response.text, final_url, extract_mode
-            )
-
-            if not extracted:
-                extracted = {
-                    "text": response.text[:DEFAULT_MAX_CHARS],
-                    "title": None,
-                }
-
-            text, truncated = truncate_text(extracted.get("text", ""), max_chars)
-            title = extracted.get("title")
+            soup = BeautifulSoup(response.text, "lxml")
+            title = None
+            if soup.title and soup.title.string:
+                title = soup.title.string.strip()
 
             logger.info(
                 f"[fetch_url] Success: {url}, title: {title[:50] if title else 'N/A'}"
@@ -344,11 +336,9 @@ def fetch_url(
                 "status": response.status_code,
                 "contentType": content_type.split(";")[0].strip(),
                 "title": title,
-                "extractMode": extract_mode,
-                "extractor": "readability",
-                "text": text,
-                "truncated": truncated,
-                "length": len(text),
+                "text": response.text,
+                "truncated": False,
+                "length": len(response.text),
                 "fetchedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "tookMs": int((time.time() - start_time) * 1000),
             }
