@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-LABEL maintainer="yourname"
+LABEL maintainer="web-search-api"
 LABEL description="Web Search API Service"
 
 WORKDIR /app
