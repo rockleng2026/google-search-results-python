@@ -133,7 +133,7 @@ def search_alias():
     return web_search()
 
 
-def run_server(host='0.0.0.0', port=5000, debug=False):
+def run_server(host='0.0.0.0', port=25001, debug=False):
     print(f"""
 ╔═══════════════════════════════════════════════════════════════╗
 ║         Web Search API Service                             ║
@@ -161,7 +161,7 @@ Environment Variables:
 def main():
     parser = argparse.ArgumentParser(description='Web Search API Service')
     parser.add_argument('--host', default='0.0.0.0')
-    parser.add_argument('--port', type=int, default=5000)
+    parser.add_argument('--port', type=int, default=25001)
     parser.add_argument('--debug', action='store_true')
     
     args = parser.parse_args()

@@ -2,12 +2,12 @@
 
 ## 1. 基础信息
 
-| 项目 | 值 |
-|------|-----|
-| 基础 URL | `http://localhost:5000` |
-| 协议 | HTTP |
-| 编码 | UTF-8 |
-| 响应格式 | JSON |
+| 项目     | 值                       |
+| -------- | ------------------------ |
+| 基础 URL | `http://localhost:25001` |
+| 协议     | HTTP                     |
+| 编码     | UTF-8                    |
+| 响应格式 | JSON                     |
 
 ---
 
@@ -23,6 +23,7 @@ Accept: application/json
 ### 2.2 响应格式
 
 成功响应:
+
 ```json
 {
   "success": true,
@@ -33,6 +34,7 @@ Accept: application/json
 ```
 
 错误响应:
+
 ```json
 {
   "error": "错误信息",
@@ -51,11 +53,13 @@ Accept: application/json
 检查服务是否正常运行。
 
 **请求示例:**
+
 ```bash
-curl http://localhost:5000/health
+curl http://localhost:25001/health
 ```
 
 **响应示例:**
+
 ```json
 {
   "status": "ok",
@@ -73,29 +77,31 @@ curl http://localhost:5000/health
 
 **参数说明:**
 
-| 参数 | 类型 | 必填 | 默认值 | 说明 |
-|------|------|------|--------|------|
-| q | string | 是 | - | 搜索关键词 |
-| num | int | 否 | 10 | 返回结果数量 (1-50) |
-| engines | string | 否 | duckduckgo,bing,google_api,baidu | 搜索引擎列表，逗号分隔 |
-| api_key | string | 否 | - | Google API Key (临时) |
-| cse_id | string | 否 | - | Google CSE ID (临时) |
+| 参数    | 类型   | 必填 | 默认值                           | 说明                   |
+| ------- | ------ | ---- | -------------------------------- | ---------------------- |
+| q       | string | 是   | -                                | 搜索关键词             |
+| num     | int    | 否   | 10                               | 返回结果数量 (1-50)    |
+| engines | string | 否   | duckduckgo,bing,google_api,baidu | 搜索引擎列表，逗号分隔 |
+| api_key | string | 否   | -                                | Google API Key (临时)  |
+| cse_id  | string | 否   | -                                | Google CSE ID (临时)   |
 
 **请求示例:**
+
 ```bash
 # 基本搜索
-curl "http://localhost:5000/web_search?q=python&num=5"
+curl "http://localhost:25001/web_search?q=python&num=5"
 
 # 指定搜索引擎
-curl "http://localhost:5000/web_search?q=python&engines=duckduckgo,baidu"
+curl "http://localhost:25001/web_search?q=python&engines=duckduckgo,baidu"
 
 # POST 请求
 curl -X POST -H "Content-Type: application/json" \
   -d '{"q": "python tutorial", "num": 5}' \
-  http://localhost:5000/web_search
+  http://localhost:25001/web_search
 ```
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -122,13 +128,13 @@ curl -X POST -H "Content-Type: application/json" \
 
 **结果字段说明:**
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| rank | int | 排名 |
-| title | string | 标题 |
-| url | string | 链接 |
-| snippet | string | 摘要 |
-| engine | string | 来源引擎 |
+| 字段    | 类型   | 说明     |
+| ------- | ------ | -------- |
+| rank    | int    | 排名     |
+| title   | string | 标题     |
+| url     | string | 链接     |
+| snippet | string | 摘要     |
+| engine  | string | 来源引擎 |
 
 ---
 
@@ -140,19 +146,21 @@ curl -X POST -H "Content-Type: application/json" \
 
 **参数说明:**
 
-| 参数 | 类型 | 必填 | 默认值 | 说明 |
-|------|------|------|--------|------|
-| url | string | 是 | - | 要抓取的网址 |
-| timeout | int | 否 | 15 | 超时时间(秒) |
+| 参数    | 类型   | 必填 | 默认值 | 说明         |
+| ------- | ------ | ---- | ------ | ------------ |
+| url     | string | 是   | -      | 要抓取的网址 |
+| timeout | int    | 否   | 15     | 超时时间(秒) |
 
 **请求示例:**
+
 ```bash
 curl -X POST -H "Content-Type: application/json" \
   -d '{"url": "https://www.python.org"}' \
-  http://localhost:5000/web_fetch
+  http://localhost:25001/web_fetch
 ```
 
 **响应示例:**
+
 ```json
 {
   "success": true,
@@ -166,16 +174,17 @@ curl -X POST -H "Content-Type: application/json" \
 
 **响应字段说明:**
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| success | bool | 是否成功 |
-| url | string | 实际访问的 URL |
-| title | string | 页面标题 |
-| content_type | string | 内容类型 |
-| text | string | 提取的文本内容 (最大10KB) |
-| raw_html | string | 原始 HTML (最大50KB) |
+| 字段         | 类型   | 说明                      |
+| ------------ | ------ | ------------------------- |
+| success      | bool   | 是否成功                  |
+| url          | string | 实际访问的 URL            |
+| title        | string | 页面标题                  |
+| content_type | string | 内容类型                  |
+| text         | string | 提取的文本内容 (最大10KB) |
+| raw_html     | string | 原始 HTML (最大50KB)      |
 
 **错误响应:**
+
 ```json
 {
   "success": false,
@@ -193,7 +202,7 @@ curl -X POST -H "Content-Type: application/json" \
 `/web_search` 的别名，功能完全相同。
 
 ```bash
-curl "http://localhost:5000/search?q=python"
+curl "http://localhost:25001/search?q=python"
 ```
 
 ---
@@ -206,14 +215,14 @@ curl "http://localhost:5000/search?q=python"
 import requests
 
 # 搜索
-response = requests.get("http://localhost:5000/web_search", params={
+response = requests.get("http://localhost:25001/web_search", params={
     "q": "python",
     "num": 5
 })
 print(response.json())
 
 # 抓取网页
-response = requests.post("http://localhost:5000/web_fetch", json={
+response = requests.post("http://localhost:25001/web_fetch", json={
     "url": "https://www.python.org"
 })
 print(response.json())
@@ -223,51 +232,51 @@ print(response.json())
 
 ```javascript
 // 搜索
-fetch('http://localhost:5000/web_search?q=python&num=5')
-  .then(res => res.json())
-  .then(data => console.log(data));
+fetch("http://localhost:25001/web_search?q=python&num=5")
+  .then((res) => res.json())
+  .then((data) => console.log(data));
 
 // 抓取
-fetch('http://localhost:5000/web_fetch', {
-  method: 'POST',
-  headers: {'Content-Type': 'application/json'},
-  body: JSON.stringify({url: 'https://www.python.org'})
+fetch("http://localhost:25001/web_fetch", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ url: "https://www.python.org" }),
 })
-  .then(res => res.json())
-  .then(data => console.log(data));
+  .then((res) => res.json())
+  .then((data) => console.log(data));
 ```
 
 ### 4.3 cURL 调用
 
 ```bash
 # 搜索
-curl "http://localhost:5000/web_search?q=python教程&num=10"
+curl "http://localhost:25001/web_search?q=python教程&num=10"
 
 # 搜索指定引擎
-curl "http://localhost:5000/web_search?q=python&engines=baidu,bing"
+curl "http://localhost:25001/web_search?q=python&engines=baidu,bing"
 
 # 抓取网页
 curl -X POST -H "Content-Type: application/json" \
   -d '{"url": "https://www.python.org", "timeout": 10}' \
-  http://localhost:5000/web_fetch
+  http://localhost:25001/web_fetch
 
 # 批量搜索 (需要实现)
 curl -X POST -H "Content-Type: application/json" \
   -d '{"queries": ["python", "java", "go"], "num": 5}' \
-  http://localhost:5000/web_batch
+  http://localhost:25001/web_batch
 ```
 
 ---
 
 ## 5. 错误码
 
-| HTTP 状态码 | 说明 |
-|-------------|------|
-| 200 | 成功 |
-| 400 | 请求参数错误 |
-| 404 | 接口不存在 |
-| 500 | 服务器内部错误 |
-| 504 | 请求超时 |
+| HTTP 状态码 | 说明           |
+| ----------- | -------------- |
+| 200         | 成功           |
+| 400         | 请求参数错误   |
+| 404         | 接口不存在     |
+| 500         | 服务器内部错误 |
+| 504         | 请求超时       |
 
 ---
 
@@ -283,8 +292,8 @@ curl -X POST -H "Content-Type: application/json" \
 
 ## 7. 环境变量
 
-| 变量名 | 说明 | 获取方式 |
-|--------|------|----------|
-| GOOGLE_API_KEY | Google API 密钥 | Google Cloud Console |
-| GOOGLE_CSE_ID | 搜索引擎 ID | Programmable Search Engine |
-| SERVER_PORT | 服务端口 | 默认 5000 |
+| 变量名         | 说明            | 获取方式                   |
+| -------------- | --------------- | -------------------------- |
+| GOOGLE_API_KEY | Google API 密钥 | Google Cloud Console       |
+| GOOGLE_CSE_ID  | 搜索引擎 ID     | Programmable Search Engine |
+| SERVER_PORT    | 服务端口        | 默认 25001                 |
