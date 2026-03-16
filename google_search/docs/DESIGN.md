@@ -180,8 +180,18 @@ python:3.11-slim
 
 ### 4.3 端口映射
 
-- 宿主机: 25001
-- 容器: 25001
+- 宿主机：25001
+- 容器：25001
+
+### 4.4 环境变量
+
+| 变量名         | 默认值     | 说明                   |
+| -------------- | ---------- | ---------------------- |
+| API_TOKEN      | -          | API 认证令牌（可选）   |
+| GOOGLE_API_KEY | -          | Google API Key（可选） |
+| GOOGLE_CSE_ID  | -          | Google CSE ID（可选）  |
+| FLASK_ENV      | production | 运行环境               |
+| SERVER_PORT    | 25001      | 服务端口               |
 
 ---
 
@@ -193,49 +203,141 @@ python:3.11-slim
 | ------ | -------------- |
 | 200    | 成功           |
 | 400    | 参数错误       |
+| 401    | 认证失败       |
 | 500    | 服务器内部错误 |
 
 ### 5.2 错误响应格式
 
 ```json
 {
-  "error": "错误信息",
-  "query": "搜索关键词"
+  "error": "错误信息"
+}
+```
+
+### 5.3 认证错误
+
+**缺少 Token：**
+```json
+{
+  "error": "Missing API token. Provide via 'Authorization: Bearer <token>' or 'X-API-Token: <token>' header"
+}
+```
+
+**无效 Token：**
+```json
+{
+  "error": "Invalid API token"
 }
 ```
 
 ---
 
-## 6. 性能考虑
+## 6. 安全设计
 
-### 6.1 超时设置
+### 6.1 API 认证
 
-- 搜索引擎请求: 15 秒
-- 网页抓取: 15 秒（可配置）
+- 支持 `Authorization: Bearer <token>` 头
+- 支持 `X-API-Token: <token>` 头
+- `/health` 接口无需认证
+- 通过 `API_TOKEN` 环境变量配置
 
-### 6.2 请求间隔
+### 6.2 SSRF 防护
 
-- 引擎间: 0.5-1.5 秒随机延迟
+**阻止访问：**
+- `localhost` 及其变体
+- `.local`、`.internal` 域名
+- 私有 IP 地址（10.x.x.x, 192.168.x.x, 172.16-31.x.x）
+- 保留 IP 地址
+
+**实现方式：**
+- DNS 解析前检查主机名
+- DNS 解析后检查 IP 地址
+- 失败关闭原则（fail closed）
+
+---
+
+## 7. 性能考虑
+
+### 7.1 超时设置
+
+- 搜索引擎请求：15 秒
+- 网页抓取：15 秒（可配置）
+
+### 7.2 请求间隔
+
+- 引擎间：0.5-1.5 秒随机延迟
 - 防止请求过快被封
 
-### 6.3 结果限制
+### 7.3 结果限制
 
 - 默认返回 10 条
 - 最大支持 50 条
 
+### 7.4 缓存机制
+
+- 内存缓存，默认 5 分钟 TTL
+- 最多保留 100 条缓存
+- 可通过 `use_cache: false` 禁用
+
 ---
 
-## 7. 未来扩展
+## 8. 模块更新
 
-### 7.1 计划功能
+### 8.1 enhanced_fetch.py - 增强网页抓取模块
+
+**新增功能：**
+- SSRF 防护
+- 内存缓存
+- 原始 HTML 返回
+- 重定向限制
+- 响应大小限制
+
+**核心函数：**
+```python
+def fetch_url(
+    url: str,
+    timeout: int = 15,
+    max_chars: int = 50000,
+    max_redirects: int = 3,
+    extract_mode: str = "markdown",
+    use_cache: bool = True,
+    cache_ttl: int = 300
+) -> Dict[str, Any]
+```
+
+### 8.2 server.py - API 服务模块更新
+
+**新增路由：**
+| 路由        | 方法     | 功能     | 认证 |
+| ----------- | -------- | -------- | ---- |
+| /health     | GET      | 健康检查 | 否   |
+| /web_search | GET/POST | 搜索     | 是   |
+| /web_fetch  | GET/POST | 网页抓取 | 是   |
+| /search     | GET/POST | 搜索别名 | 是   |
+
+**认证中间件：**
+```python
+@app.before_request
+def authenticate():
+    if request.path == "/health":
+        return None
+    # 检查 API_TOKEN
+```
+
+---
+
+## 9. 未来扩展
+
+### 9.1 计划功能
 
 - [ ] 添加代理支持
-- [ ] 添加缓存机制 (Redis)
+- [ ] 添加 Redis 缓存
 - [ ] 添加速率限制
 - [ ] 添加更多搜索引擎 (Yahoo, Yandex)
-- [ ] 异步请求支持
+- [ ] 异步请求支持 (asyncio)
+- [ ] 批量搜索接口
 
-### 7.2 监控集成
+### 9.2 监控集成
 
 - [ ] Prometheus 指标
 - [ ] Grafana 仪表板
