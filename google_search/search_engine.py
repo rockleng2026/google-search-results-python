@@ -36,7 +36,10 @@ ABSTRACT_MAX_LENGTH = 300
 _engine_index = 0
 _engine_lock = __import__("threading").Lock()
 
-DEFAULT_ENGINES = ["duckduckgo", "bing", "baidu"]
+# Default engines: rotation engines + fallback engines
+ROTATION_ENGINES = ["duckduckgo", "bing"]  # Rotated for load balancing
+FALLBACK_ENGINES = ["baidu"]  # Always at the end as fallback
+DEFAULT_ENGINES = ROTATION_ENGINES + FALLBACK_ENGINES
 
 
 class DuckDuckGoSearch:
@@ -370,16 +373,21 @@ def search(
         return []
 
     if engines is None:
-        # Use default engines (google_api removed due to API restrictions)
-        engines = DEFAULT_ENGINES.copy()
-
-        # Rotate starting engine for load balancing
-        if rotate_engines and len(engines) > 1:
+        # Use default engines: rotation engines + fallback engines
+        # Rotation: duckduckgo, bing (round-robin)
+        # Fallback: baidu (always last)
+        if rotate_engines and len(ROTATION_ENGINES) > 1:
             with _engine_lock:
-                rotation = _engine_index % len(engines)
-                _engine_index = (_engine_index + 1) % len(engines)
-            engines = engines[rotation:] + engines[:rotation]
-            logger.info(f"[rotate] Starting from engine index {rotation}: {engines[0]}")
+                rotation = _engine_index % len(ROTATION_ENGINES)
+                _engine_index = (_engine_index + 1) % len(ROTATION_ENGINES)
+            # Rotate front engines, keep fallback at end
+            rotated_front = ROTATION_ENGINES[rotation:] + ROTATION_ENGINES[:rotation]
+            engines = rotated_front + FALLBACK_ENGINES
+            logger.info(
+                f"[rotate] Starting from engine: {engines[0]}, fallback: {FALLBACK_ENGINES[0]}"
+            )
+        else:
+            engines = DEFAULT_ENGINES.copy()
 
     all_results = []
     used_urls = set()
@@ -430,7 +438,7 @@ def search(
                     )
                     break
             else:
-                logger.info(f"[{engine_name}] No results found")
+                logger.info(f"[{engine_name}] No results found, trying next engine")
 
         except Exception as e:
             logger.error(f"[{engine_name}] Error: {e}")
