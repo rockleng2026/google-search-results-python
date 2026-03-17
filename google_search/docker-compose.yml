@@ -9,8 +9,6 @@ services:
     ports:
       - "25001:25001"
     environment:
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
-      - GOOGLE_CSE_ID=${GOOGLE_CSE_ID:-}
       - API_TOKEN=${API_TOKEN:-}
       - FLASK_ENV=${FLASK_ENV:-production}
       - SERVER_PORT=25001

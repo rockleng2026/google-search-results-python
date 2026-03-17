@@ -28,9 +28,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 ABSTRACT_MAX_LENGTH = 300
+
+# Engine rotation index for load balancing
+_engine_index = 0
+_engine_lock = __import__("threading").Lock()
+
+DEFAULT_ENGINES = ["duckduckgo", "bing", "baidu"]
 
 
 class DuckDuckGoSearch:
@@ -342,6 +348,7 @@ def search(
     google_api_key=None,
     google_cse_id=None,
     debug=0,
+    rotate_engines=True,
 ):
     """
     Search using multiple engines in sequence
@@ -350,17 +357,29 @@ def search(
         keyword: Search query
         num_results: Number of results to return
         engines: List of engine names to use, in order
-        google_api_key: Google Custom Search API key
-        google_cse_id: Google Custom Search Engine ID
+        google_api_key: Google Custom Search API key (deprecated)
+        google_cse_id: Google Custom Search Engine ID (deprecated)
+        rotate_engines: Enable engine rotation for load balancing (default: True)
 
     Returns:
         List of search results
     """
+    global _engine_index
+
     if not keyword:
         return []
 
     if engines is None:
-        engines = ["duckduckgo", "bing", "google_api", "baidu"]
+        # Use default engines (google_api removed due to API restrictions)
+        engines = DEFAULT_ENGINES.copy()
+
+        # Rotate starting engine for load balancing
+        if rotate_engines and len(engines) > 1:
+            with _engine_lock:
+                rotation = _engine_index % len(engines)
+                _engine_index = (_engine_index + 1) % len(engines)
+            engines = engines[rotation:] + engines[:rotation]
+            logger.info(f"[rotate] Starting from engine index {rotation}: {engines[0]}")
 
     all_results = []
     used_urls = set()
@@ -381,8 +400,10 @@ def search(
                 results = engine.search(keyword, num_results)
 
             elif engine_name == "google_api":
-                engine = GoogleSearchAPI(google_api_key, google_cse_id)
-                results = engine.search(keyword, num_results)
+                logger.warning(
+                    "[google_api] Deprecated and removed. Use duckduckgo, bing, or baidu instead."
+                )
+                continue
 
             elif engine_name == "baidu":
                 engine = BaiduSearch()

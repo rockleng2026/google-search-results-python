@@ -27,8 +27,6 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config["JSON_AS_ASCII"] = False
 
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
-GOOGLE_CSE_ID = os.environ.get("GOOGLE_CSE_ID", "")
 API_TOKEN = os.environ.get("API_TOKEN", "")
 
 
@@ -117,8 +115,6 @@ def web_search():
             query,
             num_results=num_results,
             engines=engines,
-            google_api_key=GOOGLE_API_KEY or params.get("api_key"),
-            google_cse_id=GOOGLE_CSE_ID or params.get("cse_id"),
         )
 
         return json_response(
@@ -207,6 +203,10 @@ Authentication: {auth_info}
     or
     X-API-Token: <token>
 
+Search Engines: duckduckgo, bing, baidu
+  - Engine rotation enabled by default for load balancing
+  - Specify engines via 'engines' parameter to disable rotation
+
 Examples:
     curl "http://localhost:{port}/health"
     curl -H "Authorization: Bearer your-token" "http://localhost:{port}/web_search?q=python&num=5"
@@ -214,8 +214,6 @@ Examples:
     curl -H "Authorization: Bearer your-token" -X POST -H "Content-Type: application/json" -d '{{"url":"https://www.python.org"}}' http://localhost:{port}/web_fetch
 
 Environment Variables:
-    GOOGLE_API_KEY - Google Custom Search API Key
-    GOOGLE_CSE_ID  - Google Custom Search Engine ID
     API_TOKEN      - API Authentication Token (optional)
 """)
     app.run(host=host, port=port, debug=debug)
